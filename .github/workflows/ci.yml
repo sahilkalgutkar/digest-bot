@@ -24,7 +24,7 @@ jobs:
         run: ruff check .
 
       - name: Test
-        run: pytest tests/ -v --cov=ingest --cov=index --cov=retrieve --cov=generate --cov=eval --cov-report=xml
+        run: pytest tests/ -v --cov=ingest --cov=index --cov=retrieve --cov=generate --cov=eval --cov-report=xml --cov-fail-under=80
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
