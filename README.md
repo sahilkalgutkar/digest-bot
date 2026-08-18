@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/sahilkalgutkar/digest-bot/actions/workflows/ci.yml/badge.svg)](https://github.com/sahilkalgutkar/digest-bot/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/sahilkalgutkar/digest-bot/branch/main/graph/badge.svg)](https://codecov.io/gh/sahilkalgutkar/digest-bot)
+[![patch coverage](https://img.shields.io/badge/patch%20coverage-min%2080%25-blue.svg)](codecov.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 
