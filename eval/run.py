@@ -61,7 +61,7 @@ def run():
                 messages=[{"role": "user", "content": user_message}],
             )
             text = response.content[0].text
-            cited = set(int(n) for n in re.findall(r"\[(\d+)\]", text))
+            cited = {int(n) for n in re.findall(r"\[(\d+)\]", text)}
             correct = expected_index in cited
             citation_correct += correct
             print(f"    citation {'ok' if correct else 'MISSING/WRONG'}: {text[:120]}...")
