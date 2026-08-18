@@ -1,3 +1,5 @@
+import pytest
+
 import generate.chat as chat_module
 from generate.chat import answer
 
@@ -58,3 +60,71 @@ def test_answer_cites_sources_and_returns_model_text(monkeypatch):
     assert call["model"] == chat_module.MODEL
     assert "hello world" in call["messages"][0]["content"]
     assert "what happened?" in call["messages"][0]["content"]
+
+
+def test_main_exits_when_api_key_missing(monkeypatch):
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+
+    with pytest.raises(SystemExit, match="ANTHROPIC_API_KEY"):
+        chat_module.main()
+
+
+def test_main_skips_blank_input_and_answers_real_questions(monkeypatch, capsys):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+
+    created_with = {}
+
+    class FakeAnthropic:
+        def __init__(self, api_key):
+            created_with["api_key"] = api_key
+
+    monkeypatch.setattr(chat_module, "Anthropic", FakeAnthropic)
+
+    inputs = iter(["   ", "what happened?"])
+
+    def fake_input(prompt):
+        try:
+            return next(inputs)
+        except StopIteration:
+            raise EOFError from None
+
+    monkeypatch.setattr("builtins.input", fake_input)
+
+    answer_calls = []
+
+    def fake_answer(client, question):
+        answer_calls.append((client, question))
+        return f"ANSWER: {question}"
+
+    monkeypatch.setattr(chat_module, "answer", fake_answer)
+
+    chat_module.main()
+
+    # Blank input never reaches answer(); only the real question does.
+    assert len(answer_calls) == 1
+    assert answer_calls[0][1] == "what happened?"
+    assert isinstance(answer_calls[0][0], FakeAnthropic)
+    assert created_with["api_key"] == "test-key"
+
+    out = capsys.readouterr().out
+    assert "digest-bot ready" in out
+    assert "ANSWER: what happened?" in out
+
+
+def test_main_exits_cleanly_on_keyboard_interrupt(monkeypatch, capsys):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+    monkeypatch.setattr(chat_module, "Anthropic", lambda api_key: FakeClient())
+
+    def fake_input(prompt):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr("builtins.input", fake_input)
+
+    answer_calls = []
+    monkeypatch.setattr(
+        chat_module, "answer", lambda client, question: answer_calls.append(question)
+    )
+
+    chat_module.main()  # should return normally, not raise
+
+    assert answer_calls == []

@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 import lancedb
 
 import retrieve.search as search_module
-from retrieve.search import search
+from retrieve.search import get_model, search
 
 
 class FakeEncodedQuery:
@@ -93,3 +93,23 @@ def test_search_respects_k_limit(tmp_path, monkeypatch):
     monkeypatch.setattr(search_module, "get_model", lambda: FakeModel())
 
     assert len(search("anything", k=2)) == 2
+
+
+def test_get_model_loads_the_embedding_model_only_once(monkeypatch):
+    monkeypatch.setattr(search_module, "_model", None)
+
+    instances_created = []
+
+    class FakeSentenceTransformer:
+        def __init__(self, model_name):
+            self.model_name = model_name
+            instances_created.append(self)
+
+    monkeypatch.setattr(search_module, "SentenceTransformer", FakeSentenceTransformer)
+
+    first = get_model()
+    second = get_model()
+
+    assert first is second
+    assert len(instances_created) == 1
+    assert instances_created[0].model_name == search_module.EMBED_MODEL
