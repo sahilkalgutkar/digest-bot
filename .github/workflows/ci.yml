@@ -16,7 +16,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install dev dependencies
-        run: pip install ruff pytest
+        run: pip install ruff==0.16.3 pytest
 
       - name: Lint
         run: ruff check .

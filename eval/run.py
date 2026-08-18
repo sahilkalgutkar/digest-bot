@@ -17,7 +17,7 @@ import yaml
 from anthropic import Anthropic
 from dotenv import load_dotenv
 
-from generate.chat import format_sources, SYSTEM_PROMPT, MODEL
+from generate.chat import MODEL, SYSTEM_PROMPT, format_sources
 from retrieve.search import search
 
 load_dotenv()
