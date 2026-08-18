@@ -42,3 +42,5 @@ python -m eval.run
 
 Runs the question set in `eval/questions.yaml` against the current index and
 reports retrieval recall@k and whether generated answers cited the right source.
+
+<!-- codecov PR comment verification test -->
