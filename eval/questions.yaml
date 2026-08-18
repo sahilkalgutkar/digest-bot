@@ -1,0 +1,12 @@
+# Hand-built eval set. After you run `ingest.poll` + `index.build`, look at
+# data/articles.jsonl, pick a few real articles, and fill these in.
+#
+# expected_article_id must match the "id" field of the article the question
+# is really answered by. This is what turns eval from vibes into a number:
+# recall@k = fraction of questions where expected_article_id appears in the
+# top-k retrieved chunks.
+#
+# Example (replace with real data from your own feeds):
+questions:
+  - question: "What did <source> announce in <article title>?"
+    expected_article_id: "REPLACE_WITH_REAL_ARTICLE_ID"

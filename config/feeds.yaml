@@ -1,0 +1,16 @@
+# RSS/Atom feed URLs to poll. Add/remove as you like.
+# Pick a beat you actually want to read questions and answers about —
+# a few product changelogs is easiest to eval by hand.
+feeds:
+  - name: anthropic-news
+    url: https://www.anthropic.com/news/rss.xml
+  - name: openai-blog
+    url: https://openai.com/blog/rss.xml
+
+# Recency half-life in hours, used by the retrieval decay weight.
+# Lower = older articles are downweighted faster.
+recency_half_life_hours: 72
+
+# Chunk size in characters and overlap, used by index/build.py
+chunk_size: 1200
+chunk_overlap: 150
