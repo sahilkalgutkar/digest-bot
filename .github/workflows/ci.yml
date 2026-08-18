@@ -16,10 +16,17 @@ jobs:
           python-version: "3.11"
 
       - name: Install dev dependencies
-        run: pip install ruff==0.16.3 pytest
+        run: pip install ruff==0.16.3 pytest pytest-cov
 
       - name: Lint
         run: ruff check .
 
       - name: Test
-        run: pytest tests/ -v
+        run: pytest tests/ -v --cov=. --cov-report=xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.xml
+          fail_ci_if_error: false
