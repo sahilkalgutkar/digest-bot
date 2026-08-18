@@ -12,6 +12,8 @@ import lancedb
 import yaml
 from sentence_transformers import SentenceTransformer
 
+from index.chunking import chunk_text
+
 CONFIG_PATH = Path("config/feeds.yaml")
 DATA_PATH = Path("data/articles.jsonl")
 DB_PATH = Path("data/lancedb")
@@ -23,16 +25,6 @@ EMBED_MODEL = "BAAI/bge-small-en-v1.5"
 def load_config():
     with open(CONFIG_PATH) as f:
         return yaml.safe_load(f)
-
-
-def chunk_text(text: str, size: int, overlap: int) -> list[str]:
-    chunks = []
-    start = 0
-    while start < len(text):
-        end = start + size
-        chunks.append(text[start:end])
-        start = end - overlap
-    return [c for c in chunks if c.strip()]
 
 
 def load_articles():
