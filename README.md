@@ -17,7 +17,7 @@ semantically closest.
 
 1. **Ingest** (`ingest/`) — poll RSS feeds, extract readable article text, dedup by GUID/URL.
 2. **Index** (`index/`) — chunk articles, embed chunks, store in a local vector DB with `published_at` + `source` metadata.
-3. **Retrieve** (`retrieve/`) — hybrid search: I blend vector similarity with a recency-decay weight so a fresher, slightly-less-similar chunk can outrank an older, closer one.
+3. **Retrieve** (`retrieve/`) — I blend vector similarity with a recency-decay weight so a fresher, slightly-less-similar chunk can outrank an older, closer one. This is recency-weighted vector search, not hybrid (keyword + vector) retrieval — there's no BM25/keyword component.
 4. **Generate** (`generate/`) — answer questions, forcing citations back to source articles; explicitly say "I don't have recent info" when retrieval is empty.
 5. **Eval** (`eval/`) — I hand-built a question/answer set to measure retrieval recall and citation correctness, not vibes.
 
