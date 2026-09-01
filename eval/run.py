@@ -24,17 +24,42 @@ load_dotenv()
 
 QUESTIONS_PATH = Path("eval/questions.yaml")
 
+# The file ships as a template, because the right question set depends on which
+# feeds you poll. Reporting recall@5 over the template is worse than reporting
+# nothing: it prints a real-looking 0% that says nothing about retrieval.
+PLACEHOLDER_ARTICLE_ID = "REPLACE_WITH_REAL_ARTICLE_ID"
+
+
+class UnfilledQuestionSet(Exception):
+    pass
+
 
 def load_questions():
     with open(QUESTIONS_PATH) as f:
-        return yaml.safe_load(f)["questions"]
+        questions = yaml.safe_load(f)["questions"]
+
+    unfilled = [q for q in questions if q["expected_article_id"] == PLACEHOLDER_ARTICLE_ID]
+    if unfilled:
+        raise UnfilledQuestionSet(
+            f"{len(unfilled)} of {len(questions)} questions in {QUESTIONS_PATH} still "
+            f"carry the placeholder id.\n"
+            "Fill them in first: open data/articles.jsonl, pick articles you can "
+            "write a real question about, and copy each one's \"id\" field into "
+            "expected_article_id."
+        )
+    return questions
 
 
 def run():
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     client = Anthropic(api_key=api_key) if api_key else None
 
-    questions = load_questions()
+    try:
+        questions = load_questions()
+    except UnfilledQuestionSet as err:
+        print(err)
+        return 1
+
     hits = 0
     citation_correct = 0
 
@@ -70,7 +95,8 @@ def run():
     print(f"\nrecall@5: {hits}/{n} ({hits/n:.0%})")
     if client:
         print(f"citation correctness (of hits): {citation_correct}/{hits or 1}")
+    return 0
 
 
 if __name__ == "__main__":
-    run()
+    raise SystemExit(run())
