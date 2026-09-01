@@ -1,5 +1,7 @@
+import pytest
+
 import eval.run as eval_module
-from eval.run import load_questions
+from eval.run import UnfilledQuestionSet, load_questions
 
 
 def test_load_questions(tmp_path, monkeypatch):
@@ -99,3 +101,45 @@ def test_run_checks_citation_correctness_when_client_present(tmp_path, monkeypat
     assert "citation MISSING/WRONG: answer [2]" in out
     assert "recall@5: 2/2 (100%)" in out
     assert "citation correctness (of hits): 1/2" in out
+
+
+def test_load_questions_refuses_the_unfilled_template(tmp_path, monkeypatch):
+    """Scoring the shipped template prints a real-looking 0% that says nothing
+    about retrieval, which is worse than printing nothing."""
+    questions_file = tmp_path / "questions.yaml"
+    questions_file.write_text(
+        "questions:\n"
+        '  - question: "real question"\n    expected_article_id: "a1"\n'
+        '  - question: "template question"\n'
+        '    expected_article_id: "REPLACE_WITH_REAL_ARTICLE_ID"\n'
+    )
+    monkeypatch.setattr(eval_module, "QUESTIONS_PATH", questions_file)
+
+    with pytest.raises(UnfilledQuestionSet, match="1 of 2 questions"):
+        load_questions()
+
+
+def test_run_exits_nonzero_on_the_unfilled_template(tmp_path, monkeypatch, capsys):
+    questions_file = tmp_path / "questions.yaml"
+    questions_file.write_text(
+        "questions:\n"
+        '  - question: "template question"\n'
+        '    expected_article_id: "REPLACE_WITH_REAL_ARTICLE_ID"\n'
+    )
+    monkeypatch.setattr(eval_module, "QUESTIONS_PATH", questions_file)
+
+    called = []
+    monkeypatch.setattr(eval_module, "search", lambda *a, **k: called.append(1) or [])
+
+    assert eval_module.run() == 1
+    out = capsys.readouterr().out
+    assert "still carry the placeholder id" in out
+    assert "recall@5" not in out, "no score should be reported at all"
+    assert not called, "retrieval should not run against a template question set"
+
+
+def test_the_shipped_template_is_still_recognised_as_unfilled():
+    """If the placeholder id in eval/questions.yaml is ever renamed without
+    updating run.py, the guard silently stops guarding."""
+    with pytest.raises(UnfilledQuestionSet):
+        load_questions()

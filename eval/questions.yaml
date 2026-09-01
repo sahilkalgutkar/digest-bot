@@ -1,12 +1,18 @@
-# Hand-built eval set. After you run `ingest.poll` + `index.build`, look at
-# data/articles.jsonl, pick a few real articles, and fill these in.
+# Hand-built eval set. This file ships as a template on purpose: the questions
+# that measure anything depend on which feeds you poll, and an article id from
+# my feeds would be meaningless against yours.
 #
-# expected_article_id must match the "id" field of the article the question
-# is really answered by. This is what turns eval from vibes into a number:
+# After you run `ingest.poll` + `index.build`, open data/articles.jsonl, pick a
+# few articles you can write a real question about, and fill these in. Twenty
+# to thirty questions is enough for the number to mean something.
+#
+# expected_article_id must match the "id" field of the article the question is
+# really answered by. This is what turns eval from vibes into a number:
 # recall@k = fraction of questions where expected_article_id appears in the
 # top-k retrieved chunks.
 #
-# Example (replace with real data from your own feeds):
+# `python -m eval.run` refuses to report a score while any placeholder id is
+# still here, rather than printing a 0% that looks like a retrieval failure.
 questions:
   - question: "What did <source> announce in <article title>?"
     expected_article_id: "REPLACE_WITH_REAL_ARTICLE_ID"

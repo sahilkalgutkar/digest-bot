@@ -2,10 +2,17 @@
 # Pick a beat you actually want to read questions and answers about —
 # a few product changelogs is easiest to eval by hand.
 feeds:
-  - name: anthropic-news
-    url: https://www.anthropic.com/news/rss.xml
+  - name: github-changelog
+    url: https://github.blog/changelog/feed/
   - name: openai-blog
     url: https://openai.com/blog/rss.xml
+
+# How many entries to take from each feed per poll, newest first. Some feeds
+# publish their entire history in one document -- openai-blog is over a
+# thousand entries -- and every entry costs a full page fetch, so an unbounded
+# first run is a fifteen minute one. Raise it, or set it to 0 for no limit,
+# once you know what your own feeds actually return.
+max_articles_per_feed: 25
 
 # Recency half-life in hours, used by the retrieval decay weight.
 # Lower = older articles are downweighted faster.
