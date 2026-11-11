@@ -36,11 +36,9 @@ def format_sources(chunks: list[dict]) -> str:
     return "\n\n".join(lines)
 
 
-def answer(client: Anthropic, question: str) -> str:
-    chunks = search(question, k=5)
-    if not chunks:
-        return "I don't have any indexed articles to answer that from. Run ingest + index first."
-
+def generate(client: Anthropic, question: str, chunks: list[dict]) -> str:
+    """Answer from already-retrieved chunks. Shared by the chat loop and
+    eval/run.py, so eval grades the exact prompt the bot sends."""
     sources_block = format_sources(chunks)
     user_message = (
         f"Sources:\n\n{sources_block}\n\nQuestion: {question}\n\n"
@@ -49,11 +47,22 @@ def answer(client: Anthropic, question: str) -> str:
 
     response = client.messages.create(
         model=MODEL,
-        max_tokens=1024,
+        # Room for adaptive thinking, which counts against max_tokens: a
+        # tight cap cuts the visible answer off rather than the thinking.
+        max_tokens=16000,
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": user_message}],
     )
-    return response.content[0].text
+    # The model thinks adaptively by default, so content[0] can be a thinking
+    # block rather than the answer -- keep only the text blocks.
+    return "".join(block.text for block in response.content if block.type == "text")
+
+
+def answer(client: Anthropic, question: str) -> str:
+    chunks = search(question, k=5)
+    if not chunks:
+        return "I don't have any indexed articles to answer that from. Run ingest + index first."
+    return generate(client, question, chunks)
 
 
 def main():
