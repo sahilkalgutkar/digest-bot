@@ -91,3 +91,22 @@ def test_build_with_no_articles_prints_message_and_skips_indexing(tmp_path, monk
 
     assert "No articles found" in capsys.readouterr().out
     assert not db_path.exists()
+
+
+def test_build_takes_explicit_data_and_index_paths(tmp_path, monkeypatch):
+    config_file = tmp_path / "feeds.yaml"
+    config_file.write_text("chunk_size: 20\nchunk_overlap: 5\n")
+    data_file = tmp_path / "fixture.jsonl"
+    _write_article(data_file, id="fixture-article")
+    db_path = tmp_path / "eval-index"
+
+    monkeypatch.setattr(build_module, "CONFIG_PATH", config_file)
+    monkeypatch.setattr(build_module, "DATA_PATH", tmp_path / "not-this.jsonl")
+    monkeypatch.setattr(build_module, "DB_PATH", tmp_path / "not-this-index")
+    monkeypatch.setattr(build_module, "SentenceTransformer", FakeModel)
+
+    build(data_path=data_file, db_path=db_path)
+
+    rows = lancedb.connect(db_path).open_table(build_module.TABLE_NAME).to_arrow().to_pylist()
+    assert {r["article_id"] for r in rows} == {"fixture-article"}
+    assert not (tmp_path / "not-this-index").exists()

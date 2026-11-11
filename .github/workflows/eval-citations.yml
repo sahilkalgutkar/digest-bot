@@ -1,0 +1,55 @@
+name: Citation eval
+
+# Generates an answer for every question whose article was retrieved, and checks
+# that it cites that article. This calls the model about forty times per run,
+# so it runs on demand rather than on every push. Needs an ANTHROPIC_API_KEY
+# repository secret (Settings -> Secrets and variables -> Actions).
+on:
+  workflow_dispatch:
+
+jobs:
+  citations:
+    runs-on: ubuntu-latest
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Check the API key secret is set
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::error::Add an ANTHROPIC_API_KEY repository secret to run the citation eval."
+            exit 1
+          fi
+
+      - name: Install dependencies (CPU-only torch)
+        run: |
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements.txt
+
+      - name: Cache the embedding model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-bge-small-en-v1.5
+
+      - name: Retrieval and citation eval
+        run: |
+          set -o pipefail
+          python -m eval.run --min-recall 0.9 | tee eval.txt
+
+      - name: Publish the scores
+        if: always()
+        run: |
+          {
+            echo "### Retrieval and citation eval (frozen corpus)"
+            echo '```'
+            grep -E '^(  |latest|lookup|all|recall|citation correctness|FAIL)' eval.txt || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -187,3 +187,24 @@ def test_poll_reports_a_feed_that_returned_nothing(tmp_path, monkeypatch, capsys
 
     out = capsys.readouterr().out
     assert "test-feed: no entries (status 404)" in out
+
+
+def test_poll_takes_explicit_config_and_data_paths(tmp_path, monkeypatch):
+    """eval/snapshot.py polls the fixture feeds into the fixture file; the
+    bot's own config and data must be left alone."""
+    config_file = tmp_path / "fixture-feeds.yaml"
+    config_file.write_text("feeds:\n  - name: fixture-feed\n    url: http://example.com/rss\n")
+    data_file = tmp_path / "nested" / "fixture.jsonl"
+    monkeypatch.setattr(poll_module, "CONFIG_PATH", tmp_path / "not-this.yaml")
+    monkeypatch.setattr(poll_module, "DATA_PATH", tmp_path / "not-this.jsonl")
+
+    entry = FakeEntry(id="f1", link="http://example.com/f1", title="Fixture")
+    fake_parsed = type("FakeParsed", (), {"entries": [entry]})()
+    monkeypatch.setattr(poll_module.feedparser, "parse", lambda url: fake_parsed)
+    monkeypatch.setattr(poll_module, "extract_text", lambda url: "body")
+
+    poll(config_path=config_file, data_path=data_file)
+
+    records = [json.loads(line) for line in data_file.read_text().splitlines()]
+    assert [(r["id"], r["source"]) for r in records] == [("f1", "fixture-feed")]
+    assert not (tmp_path / "not-this.jsonl").exists()

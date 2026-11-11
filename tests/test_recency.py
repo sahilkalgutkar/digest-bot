@@ -24,3 +24,21 @@ def test_recency_weight_approaches_zero_for_very_old_articles():
 def test_recency_weight_clamps_future_timestamps_to_full_weight():
     future = (datetime.now(timezone.utc) + timedelta(hours=5)).isoformat()
     assert recency_weight(future, half_life_hours=24) == 1.0
+
+
+def test_recency_weight_is_one_half_at_one_half_life():
+    now = datetime(2026, 11, 11, tzinfo=timezone.utc)
+    published = (now - timedelta(hours=72)).isoformat()
+    assert recency_weight(published, half_life_hours=72, now=now) == 0.5
+
+
+def test_recency_weight_uses_the_pinned_clock_not_the_wall_clock():
+    """eval pins now to the corpus snapshot time; an article published at that
+    moment is brand new however long ago the snapshot was taken."""
+    snapshot = datetime(2020, 1, 1, tzinfo=timezone.utc)
+    assert recency_weight(snapshot.isoformat(), half_life_hours=24, now=snapshot) == 1.0
+
+
+def test_infinite_half_life_turns_decay_off():
+    ancient = (datetime.now(timezone.utc) - timedelta(days=3650)).isoformat()
+    assert recency_weight(ancient, half_life_hours=float("inf")) == 1.0

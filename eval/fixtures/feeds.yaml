@@ -1,0 +1,16 @@
+# Feeds the eval corpus is snapshotted from (python -m eval.snapshot).
+# Picked because their posts are openly licensed, so a frozen copy can live in
+# the repo -- see ATTRIBUTION.md. These are not the bot's feeds; those stay in
+# config/feeds.yaml. Chunking and the recency half-life used during eval come
+# from config/feeds.yaml too, so eval scores the configuration the bot runs.
+feeds:
+  - name: kubernetes-blog
+    url: https://kubernetes.io/feed.xml
+  - name: go-blog
+    url: https://go.dev/blog/feed.atom
+  - name: rust-blog
+    url: https://blog.rust-lang.org/feed.xml
+  - name: inside-rust
+    url: https://blog.rust-lang.org/inside-rust/feed.xml
+
+max_articles_per_feed: 25

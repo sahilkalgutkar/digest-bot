@@ -5,28 +5,37 @@ from generate.chat import answer
 
 
 class FakeTextBlock:
+    type = "text"
+
     def __init__(self, text):
         self.text = text
 
 
+class FakeThinkingBlock:
+    """Shaped like the SDK's ThinkingBlock: no .text attribute at all."""
+
+    type = "thinking"
+    thinking = ""
+
+
 class FakeResponse:
-    def __init__(self, text):
-        self.content = [FakeTextBlock(text)]
+    def __init__(self, content):
+        self.content = content
 
 
 class FakeMessages:
-    def __init__(self, response_text):
-        self._response_text = response_text
+    def __init__(self, content):
+        self._content = content
         self.last_call = None
 
     def create(self, **kwargs):
         self.last_call = kwargs
-        return FakeResponse(self._response_text)
+        return FakeResponse(self._content)
 
 
 class FakeClient:
-    def __init__(self, response_text="answer with [1] citation"):
-        self.messages = FakeMessages(response_text)
+    def __init__(self, response_text="answer with [1] citation", content=None):
+        self.messages = FakeMessages(content or [FakeTextBlock(response_text)])
 
 
 def test_answer_returns_message_when_no_chunks_found(monkeypatch):
@@ -60,6 +69,35 @@ def test_answer_cites_sources_and_returns_model_text(monkeypatch):
     assert call["model"] == chat_module.MODEL
     assert "hello world" in call["messages"][0]["content"]
     assert "what happened?" in call["messages"][0]["content"]
+
+
+def test_answer_skips_a_leading_thinking_block(monkeypatch):
+    """With adaptive thinking the first content block can be a thinking block,
+    which has no .text -- reading content[0].text used to crash here."""
+    monkeypatch.setattr(chat_module, "search", lambda question, k=5: [_chunk()])
+    client = FakeClient(
+        content=[FakeThinkingBlock(), FakeTextBlock("part one [1]"), FakeTextBlock(" part two")]
+    )
+
+    assert answer(client, "what happened?") == "part one [1] part two"
+
+
+def test_generate_answers_from_the_chunks_it_is_given(monkeypatch):
+    monkeypatch.setattr(chat_module, "search", lambda *a, **k: pytest.fail("generate must not search"))
+    client = FakeClient(response_text="from the chunk [1]")
+
+    assert chat_module.generate(client, "q?", [_chunk()]) == "from the chunk [1]"
+    assert "hello world" in client.messages.last_call["messages"][0]["content"]
+
+
+def _chunk():
+    return {
+        "title": "A",
+        "source": "feed",
+        "published_at": "2026-01-01",
+        "text": "hello world",
+        "article_id": "a1",
+    }
 
 
 def test_main_exits_when_api_key_missing(monkeypatch):
