@@ -27,14 +27,17 @@ def load_config():
         return yaml.safe_load(f)
 
 
-def load_articles():
-    with open(DATA_PATH) as f:
+def load_articles(path=None):
+    with open(path or DATA_PATH) as f:
         return [json.loads(line) for line in f]
 
 
-def build():
+def build(data_path=None, db_path=None):
+    """Paths default to the bot's own data; eval/run.py builds the frozen eval
+    corpus into a throwaway directory with the same chunking and embeddings."""
+    db_path = db_path or DB_PATH
     config = load_config()
-    articles = load_articles()
+    articles = load_articles(data_path)
     model = SentenceTransformer(EMBED_MODEL)
 
     rows = []
@@ -64,10 +67,10 @@ def build():
     for row, vec in zip(rows, embeddings):
         row["vector"] = vec.tolist()
 
-    db = lancedb.connect(DB_PATH)
+    db = lancedb.connect(db_path)
     db.create_table(TABLE_NAME, data=rows, mode="overwrite")
 
-    print(f"Indexed {len(rows)} chunks from {len(articles)} articles -> {DB_PATH}")
+    print(f"Indexed {len(rows)} chunks from {len(articles)} articles -> {db_path}")
 
 
 if __name__ == "__main__":

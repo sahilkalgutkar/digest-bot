@@ -22,16 +22,17 @@ DATA_PATH = Path("data/articles.jsonl")
 DEFAULT_MAX_ARTICLES_PER_FEED = 25
 
 
-def load_config():
-    with open(CONFIG_PATH) as f:
+def load_config(path=None):
+    with open(path or CONFIG_PATH) as f:
         return yaml.safe_load(f)
 
 
-def load_seen_ids():
-    if not DATA_PATH.exists():
+def load_seen_ids(path=None):
+    path = Path(path or DATA_PATH)
+    if not path.exists():
         return set()
     seen = set()
-    with open(DATA_PATH) as f:
+    with open(path) as f:
         for line in f:
             seen.add(json.loads(line)["id"])
     return seen
@@ -63,14 +64,17 @@ def extract_text(url: str) -> str | None:
     return trafilatura.extract(downloaded)
 
 
-def poll():
-    config = load_config()
-    seen_ids = load_seen_ids()
-    DATA_PATH.parent.mkdir(exist_ok=True)
+def poll(config_path=None, data_path=None):
+    """Paths default to the bot's own config and data file; eval/snapshot.py
+    points them at the eval fixture instead."""
+    data_path = Path(data_path or DATA_PATH)
+    config = load_config(config_path)
+    seen_ids = load_seen_ids(data_path)
+    data_path.parent.mkdir(parents=True, exist_ok=True)
     limit = config.get("max_articles_per_feed", DEFAULT_MAX_ARTICLES_PER_FEED)
 
     new_count = 0
-    with open(DATA_PATH, "a") as out:
+    with open(data_path, "a") as out:
         for feed in config["feeds"]:
             parsed = feedparser.parse(feed["url"])
             entries = parsed.entries
@@ -112,7 +116,7 @@ def poll():
 
             print(f"{feed['name']}: {feed_count} new from {len(entries)} entries")
 
-    print(f"Ingested {new_count} new articles -> {DATA_PATH}")
+    print(f"Ingested {new_count} new articles -> {data_path}")
 
 
 if __name__ == "__main__":

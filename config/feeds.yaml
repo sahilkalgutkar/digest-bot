@@ -14,9 +14,14 @@ feeds:
 # once you know what your own feeds actually return.
 max_articles_per_feed: 25
 
-# Recency half-life in hours, used by the retrieval decay weight.
-# Lower = older articles are downweighted faster.
+# Recency, used by retrieve/search.py:
+#   score = similarity * ((1 - recency_blend) + recency_blend * 0.5 ** (age / half-life))
+# recency_blend is the most recency can move a score: at 0.05 a fresh article
+# wins a near-tie, but an old article that clearly matches better still wins.
+# Raising it trades lookup recall for freshness -- measure the trade with
+#   python -m eval.run --recency-blend 0.2
 recency_half_life_hours: 72
+recency_blend: 0.05
 
 # Chunk size in characters and overlap, used by index/build.py
 chunk_size: 1200

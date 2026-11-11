@@ -1,18 +1,119 @@
-# Hand-built eval set. This file ships as a template on purpose: the questions
-# that measure anything depend on which feeds you poll, and an article id from
-# my feeds would be meaningless against yours.
+# Hand-written questions over the frozen corpus in eval/fixtures/articles.jsonl
+# (snapshot time in eval/fixtures/manifest.json). Each one was written from the
+# article it points at, and phrased the way someone would ask it rather than by
+# echoing the title, so retrieval has to match meaning, not headline words.
 #
-# After you run `ingest.poll` + `index.build`, open data/articles.jsonl, pick a
-# few articles you can write a real question about, and fill these in. Twenty
-# to thirty questions is enough for the number to mean something.
+# kind: lookup  -- a fact from one specific article, of any age. Recency
+#                  weighting can only hurt these: an older article has to beat
+#                  newer, loosely related ones.
+# kind: latest  -- "what's the newest X", where the corpus holds an older,
+#                  near-identical article as a distractor (rustup 1.29.2 vs
+#                  1.29.3, Rust 1.99.0 vs 1.99.1, ...). Only the newer one is
+#                  correct, so recall@1 is the number that matters here: a
+#                  top-5 that holds both is not an answer.
 #
-# expected_article_id must match the "id" field of the article the question is
-# really answered by. This is what turns eval from vibes into a number:
-# recall@k = fraction of questions where expected_article_id appears in the
-# top-k retrieved chunks.
+# Several lookups are deliberately hard: the expected article sits among
+# near-neighbours (Memory QoS vs the cgroup v2 post, the two SIMD posts, C
+# variadics in Rust 1.99.0 vs the variadic generics survey, the two Cargo team
+# announcements, eMudhra in the Go blog vs rustup 1.29.2).
 #
-# `python -m eval.run` refuses to report a score while any placeholder id is
-# still here, rather than printing a 0% that looks like a retrieval failure.
+# Re-snapshotting the corpus replaces these articles -- rewrite this file
+# against the new snapshot in the same change.
 questions:
-  - question: "What did <source> announce in <article title>?"
-    expected_article_id: "REPLACE_WITH_REAL_ARTICLE_ID"
+  # --- Kubernetes blog ---------------------------------------------------
+  - question: "How many enhancements shipped in Kubernetes 1.37, and what is the release named after?"
+    expected_article_id: "https://kubernetes.io/blog/2026/08/26/kubernetes-v1-37-release/"
+  - question: "How can I tell whether a PVC is no longer referenced by any running pod?"
+    expected_article_id: "https://kubernetes.io/blog/2026/09/21/kubernetes-v1-37-pvc-last-used-time/"
+  - question: "Which node conditions report that a node is draining or undergoing maintenance?"
+    expected_article_id: "https://kubernetes.io/blog/2026/09/09/kubernetes-v1-37-node-lifecycle-conditions/"
+  - question: "Can the HPA take a deployment all the way down to zero replicas without an add-on?"
+    expected_article_id: "https://kubernetes.io/blog/2026/09/02/kubernetes-v1-37-hpa-scale-to-zero-beta/"
+  - question: "How does the API server use less memory when it reads a large collection of objects from etcd?"
+    expected_article_id: "https://kubernetes.io/blog/2026/09/01/kubernetes-v1-37-etcd-range-stream/"
+  - question: "What rewrites stored objects to a newer schema version, and is it stable now?"
+    expected_article_id: "https://kubernetes.io/blog/2026/08/31/kubernetes-v1-37-storage-version-migration-ga/"
+  - question: "Which API version backs kubectl top now that the resource metrics API is stable?"
+    expected_article_id: "https://kubernetes.io/blog/2026/08/27/kubernetes-v1-37-metrics-api-ga/"
+  - question: "Can the kubelet, container runtime and CNI plugins run as a non-root user on the host?"
+    expected_article_id: "https://kubernetes.io/blog/2026/09/04/kubernetes-v1-37-rootless-beta/"
+  - question: "What does the Memory QoS beta need on the node, and is it on by default?"
+    expected_article_id: "https://kubernetes.io/blog/2026/09/14/kubernetes-v1-37-memory-qos-graduates-to-beta/"
+  - question: "Is cgroup v1 still supported by Kubernetes, or do I have to move my nodes to v2?"
+    expected_article_id: "https://kubernetes.io/blog/2026/10/06/kubernetes-cgroups-v2-shift/"
+  - question: "How can swap on NVMe drives let a node hold more idle, memory-hungry AI agent pods?"
+    expected_article_id: "https://kubernetes.io/blog/2026/10/05/scaling-kubernetes-workloads-with-node-swap/"
+  - question: "What happens when an in-place pod resize asks for more CPU than the node has free?"
+    expected_article_id: "https://kubernetes.io/blog/2026/09/10/kubernetes-v1-37-scheduler-preemption-for-in-place-pod-resize-alpha/"
+  - question: "How do Prometheus native histograms cut the storage cost of Kubernetes latency metrics?"
+    expected_article_id: "https://kubernetes.io/blog/2026/09/11/kubernetes-v1-37-native-histograms-beta/"
+  - question: "How do I stop containers from executing binaries written into a shared writable volume?"
+    expected_article_id: "https://kubernetes.io/blog/2026/09/16/kubernetes-v1-37-hardening-container-storage/"
+  - question: "What is the alternative to service account JWTs for giving a pod an X.509 identity?"
+    expected_article_id: "https://kubernetes.io/blog/2026/08/28/kubernetes-v1-37-pod-certificates-and-cluster-trust-bundles/"
+  - question: "Which layer 4 route types moved into the Gateway API standard channel?"
+    expected_article_id: "https://kubernetes.io/blog/2026/08/03/gateway-api-v1-6-release/"
+  - question: "Is there a stricter YAML subset for Kubernetes manifests that avoids YAML's surprising behaviours?"
+    expected_article_id: "https://kubernetes.io/blog/2026/08/11/how-to-pretty-print-kubernetes-yaml-as-kyaml/"
+  - question: "My job is managed by Kueue and has no pods yet. How can I see whether its workload was admitted?"
+    expected_article_id: "https://kubernetes.io/blog/2026/10/14/tracing-kueue-admission-with-headlamp/"
+  - question: "Is there a Kubernetes group writing a runtime behaviour standard for workloads, rather than for clusters?"
+    expected_article_id: "https://kubernetes.io/blog/2026/10/27/announcing-workload-conformance-wg/"
+  - question: "Which project's v1.0.0 release moved CSI changed block tracking to beta?"
+    expected_article_id: "https://kubernetes.io/blog/2026/09/14/csi-changed-block-tracking-beta/"
+
+  # --- Go blog -------------------------------------------------------------
+  - question: "Which new JSON packages became stable in Go 1.27?"
+    expected_article_id: "tag:blog.golang.org,2013:blog.golang.org/jsonv2"
+  - question: "How quickly did Go ship a fix after the eMudhra certificate incident, and on which release track?"
+    expected_article_id: "tag:blog.golang.org,2013:blog.golang.org/emudhra-incident"
+  - question: "Why are repeated HTTP/1 requests almost five times faster in Go 1.27 than in 1.26?"
+    expected_article_id: "tag:blog.golang.org,2013:blog.golang.org/http-connection-reuse"
+  - question: "Besides amd64, which CPU architectures does Go's low-level archsimd package support?"
+    expected_article_id: "tag:blog.golang.org,2013:blog.golang.org/archsimd"
+  - question: "Does Go have a portable vector API that works the same on any CPU architecture?"
+    expected_article_id: "tag:blog.golang.org,2013:blog.golang.org/simd-experiment"
+  - question: "How much faster are small heap allocations in Go 1.27?"
+    expected_article_id: "tag:blog.golang.org,2013:blog.golang.org/size-specialized-allocations"
+  - question: "How can I find goroutines that are blocked forever on a channel nobody will ever send to?"
+    expected_article_id: "tag:blog.golang.org,2013:blog.golang.org/goroutine-leak-profiles"
+  - question: "What Language Server Protocol extension did gopls propose for multi-step refactorings?"
+    expected_article_id: "tag:blog.golang.org,2013:blog.golang.org/interactive-refactoring"
+  - question: "When were Go 1.26 and Go 1.27 released?"
+    expected_article_id: "tag:blog.golang.org,2013:blog.golang.org/17years"
+
+  # --- Rust blog + Inside Rust ---------------------------------------------
+  - question: "Will the 32-bit Windows MSVC target still ship the Rust compiler as a host tool?"
+    expected_article_id: "https://blog.rust-lang.org/2026/10/02/demoting-i686-windows-targets-to-std-only/"
+  - question: "How can caching Miri's output in GitHub Actions expose secrets to pull requests?"
+    expected_article_id: "https://blog.rust-lang.org/2026/09/21/github-actions-leaking-secrets-when-miri-output-is-cached/"
+  - question: "What social-engineering tactic is being used against owners of popular crates?"
+    expected_article_id: "https://blog.rust-lang.org/2026/09/17/targeted-attacks/"
+  - question: "Which new Rust compiler team groups focus on GPUs and on linkers?"
+    expected_article_id: "https://blog.rust-lang.org/inside-rust/2026/10/20/gpu-target-notification-group/"
+  - question: "Can I define C-variadic functions in Rust itself, and since which version?"
+    expected_article_id: "https://blog.rust-lang.org/2026/10/01/Rust-1.99.0/"
+  - question: "How many responses did the variadic generics survey get?"
+    expected_article_id: "https://blog.rust-lang.org/inside-rust/2026/10/27/variadic-generics-micro-survey-results/"
+  - question: "Who are the two people who just joined the Cargo team?"
+    expected_article_id: "https://blog.rust-lang.org/inside-rust/2026/09/08/welcome-dongpo-and-ross-to-the-cargo-team/"
+  - question: "Who took the full-time Maintainer in Residence role for Cargo, and where does the money come from?"
+    expected_article_id: "https://blog.rust-lang.org/2026/09/22/announcing-a-maintainer-in-residence-scott-schafer-for-the-cargo-team/"
+  - question: "What are the ways I can fund Rust maintenance work or individual contributors?"
+    expected_article_id: "https://blog.rust-lang.org/2026/10/26/how-to-fund-rust-contributors/"
+  - question: "What is meant to replace the generic_const_exprs feature?"
+    expected_article_id: "https://blog.rust-lang.org/inside-rust/2026/10/02/generic-const-args-and-you/"
+
+  # --- latest: the newer of two near-identical articles is the only right answer
+  - question: "What's the latest rustup release and what does it fix?"
+    expected_article_id: "https://blog.rust-lang.org/2026/11/03/Rustup-1.29.3/"
+    kind: latest
+  - question: "What is the most recent stable Rust release?"
+    expected_article_id: "https://blog.rust-lang.org/2026/10/15/Rust-1.99.1/"
+    kind: latest
+  - question: "Which Rust release was most recently announced for pre-release testing?"
+    expected_article_id: "https://blog.rust-lang.org/inside-rust/2026/10/13/1.99.1-prerelease/"
+    kind: latest
+  - question: "Who is featured in the newest Rust maintainer spotlight?"
+    expected_article_id: "https://blog.rust-lang.org/inside-rust/2026/11/02/maintainer-spotlight-anthony-bolden-walnut356/"
+    kind: latest
